@@ -1,5 +1,6 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from pydantic import BaseModel
+from anchor.client import build_deposit_tx
 from dotenv import load_dotenv
 import uvicorn
 
@@ -32,7 +33,8 @@ async def deposit(request: DepositRequest):
     """
     User pays SOL to buy tasks. This calls the Anchor `user_deposit` function.
     """
-    return {"response": "deposit"}
+    serialized_tx = await build_deposit_tx(request.user_pubkey, request.num_tasks)
+    return {"response": {"transaction": serialized_tx}}
 
 @app.post("/execute-task")
 async def execute_task(request: ExecuteTaskRequest, background_tasks: BackgroundTasks):
