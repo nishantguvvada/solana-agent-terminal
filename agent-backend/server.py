@@ -1,10 +1,26 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from anchor.client import build_deposit_tx
+from anchor.client import build_deposit_tx, build_execute_task_tx
 from dotenv import load_dotenv
 import uvicorn
+import os
+
+load_dotenv()
 
 app = FastAPI(title="Solana Agent Terminal Backend")
+
+origins = [
+    os.getenv("FRONTEND_URL") or "http://localhost:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
 
 # Request Models
 
@@ -42,7 +58,8 @@ async def execute_task(request: ExecuteTaskRequest, background_tasks: Background
     Starts the copy-trade watcher.
     The watcher listens for trades from `target_wallet` and triggers AI agent analysis.
     """
-    return {"response": "Deduct 1 task, trigger AI copy-trade"}
+    tx = await build_execute_task_tx(request.user_pubkey)
+    return {"tx": tx}
 
 @app.get("/user-details")
 def user_details():

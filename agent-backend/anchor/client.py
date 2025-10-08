@@ -2,7 +2,8 @@ from solana.rpc.async_api import AsyncClient
 from solders.pubkey import Pubkey
 from solders.hash import Hash
 from solders.message import Message
-from solders.transaction import Transaction, VersionedTransaction
+from solders.signature import Signature
+from solders.transaction import VersionedTransaction, Transaction
 from anchorpy import Program, Provider, Wallet, Idl
 from base64 import b64encode
 import base64
@@ -12,7 +13,7 @@ import base64
 # ----------------------------
 RPC_URL = "https://api.devnet.solana.com"  # devnet RPC
 PROGRAM_ID = Pubkey.from_string("9Bdw4evvdApf2Deb15LRVM5jyxn1CARxAL4Zakqgo8N1")  # Replace with your deployed program ID
-IDL_PATH = "idl.json"                      # Export this from Anchor build folder
+IDL_PATH = ".\\anchor\\idl.json"                      # Export this from Anchor build folder
 SYS_PROGRAM_ID = Pubkey.from_string("11111111111111111111111111111111")
 
 # ----------------------------
@@ -163,7 +164,9 @@ async def build_execute_task_tx(user_pubkey: str):
         blockhash
     )
 
-    versioned_tx = VersionedTransaction.populate(message, [])
+    placeholder = Signature.default()
+    versioned_tx = VersionedTransaction.populate(message, [placeholder])
+
     tx_bytes = bytes(versioned_tx)
 
     return base64.b64encode(tx_bytes).decode("utf-8")
@@ -226,11 +229,11 @@ if __name__ == "__main__":
         # tx = await build_deposit_tx("7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Ctb", "64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf", 5)
         # print("TX", tx)
 
-        # tx = await build_execute_task_tx("7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Ctb")
-        # print("TX", tx)
-
-        tx = await build_withdraw_tx("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        tx = await build_execute_task_tx("7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Ctb")
         print("TX", tx)
+
+        # tx = await build_withdraw_tx("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        # print("TX", tx)
 
 
     asyncio.run(main())
