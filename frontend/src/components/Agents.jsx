@@ -2,7 +2,7 @@ import {
   useWallet,
   useConnection
 } from "@solana/wallet-adapter-react";
-import { VersionedTransaction, Connection, clusterApiUrl } from "@solana/web3.js";
+import { VersionedTransaction, TransactionMessage, TransactionInstruction, PublicKey } from "@solana/web3.js";
 import { useState } from "react";
 import axios from "axios";
 
@@ -11,27 +11,39 @@ export const Agents = () => {
     const { publicKey, signTransaction, sendTransaction } = useWallet();
     const { connection } = useConnection();
 
-    async function signAndSend(txBase64) {
+    async function signAndSend(ixPayload) {
         if (!publicKey) throw new Error("Wallet not connected");
 
+        const { program_id, keys, data } = ixPayload;
+
         try {
-            const txBytes = Buffer.from(txBase64, "base64");
 
-            console.log("txBytes", txBytes);
+            const ix = new TransactionInstruction({
+                programId: new PublicKey(program_id),
+                keys: keys.map(k => ({
+                pubkey: new PublicKey(k.pubkey),
+                isSigner: k.is_signer,
+                isWritable: k.is_writable,
+                })),
+                data: Buffer.from(data, "base64"),
+            });
 
-            const tx = VersionedTransaction.deserialize(txBytes);
+            const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("finalized");
+            const messageV0 = new TransactionMessage({
+                payerKey: publicKey,
+                recentBlockhash: blockhash,
+                instructions: [ix],
+            }).compileToV0Message();
 
-            console.log("tx", tx);
+            const versionedTx = new VersionedTransaction(messageV0);
+            const signedTx = await signTransaction(versionedTx);
+            console.log("signed tx:", signedTx);
+            const signature = await connection.sendRawTransaction(signedTx.serialize())
+            console.log("signature:", signature);
+            await connection.confirmTransaction({ signature: signature, blockhash, lastValidBlockHeight });
 
-            // const signedTx = await signTransaction(tx);
+            console.log("Transaction submitted:", signature);
 
-            // console.log("signedTx", signedTx);
-
-            // const txid = await connection.sendRawTransaction(signedTx.serialize());
-            const txid = await sendTransaction(tx, connection);
-
-            console.log("Transaction submitted:", txid);
-            return txid;
         } catch(err) {
             console.log(err)
         }
@@ -43,18 +55,17 @@ export const Agents = () => {
         const res = await axios.post("http://localhost:8000/execute-task", {
             user_pubkey: publicKey.toString(),
             target_wallet: "7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Dtb"
-        })
+        });
 
         console.log(res);
-        const tx = res.data.tx;
-        console.log("tx", tx);
+        const ix = res.data.ix;
+        console.log("ix", ix);
 
         try {
-        const txid = await signAndSend(tx);
-        alert(`Transaction successful: ${txid}`);
+            await signAndSend(ix);
         } catch (err) {
-        console.error("Transaction failed", err);
-        alert("Transaction failed. Check console.");
+            console.error("Transaction failed", err);
+            alert("Transaction failed. Check console.");
         }
 
         setLoading(false);

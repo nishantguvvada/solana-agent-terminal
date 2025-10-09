@@ -154,22 +154,18 @@ async def build_execute_task_tx(user_pubkey: str):
         }
     ).instruction()
 
-    client = program.provider.connection
-    blockhash_resp = await client.get_latest_blockhash()
-    blockhash = blockhash_resp.value.blockhash
-
-    message = Message.new_with_blockhash(
-        [ix],  # list of instructions
-        user_publickey,   # fee payer
-        blockhash
-    )
-
-    placeholder = Signature.default()
-    versioned_tx = VersionedTransaction.populate(message, [placeholder])
-
-    tx_bytes = bytes(versioned_tx)
-
-    return base64.b64encode(tx_bytes).decode("utf-8")
+    return  {
+        "program_id": str(ix.program_id),
+        "keys": [
+            {
+                "pubkey": str(meta.pubkey),
+                "is_signer": meta.is_signer,
+                "is_writable": meta.is_writable,
+            }
+            for meta in ix.accounts
+        ],
+        "data": base64.b64encode(bytes(ix.data)).decode("utf-8"),
+    }
 
 # ----------------------------
 # 8. Withdraw (Admin only)

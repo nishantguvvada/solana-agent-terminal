@@ -58,8 +58,8 @@ async def execute_task(request: ExecuteTaskRequest, background_tasks: Background
     Starts the copy-trade watcher.
     The watcher listens for trades from `target_wallet` and triggers AI agent analysis.
     """
-    tx = await build_execute_task_tx(request.user_pubkey)
-    return {"tx": tx}
+    ix = await build_execute_task_tx(request.user_pubkey)
+    return {"ix": ix}
 
 @app.get("/user-details")
 def user_details():
