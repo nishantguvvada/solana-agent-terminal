@@ -8,7 +8,8 @@ import axios from "axios";
 
 export const Agents = () => {
     const [loading, setLoading] = useState(false);
-    const { publicKey, signTransaction, sendTransaction } = useWallet();
+    const [agentFee, setAgentFee] = useState(0);
+    const { publicKey, signTransaction } = useWallet();
     const { connection } = useConnection();
 
     async function signAndSend(ixPayload) {
@@ -49,7 +50,7 @@ export const Agents = () => {
         }
     }
 
-    async function handleClick() {
+    async function handleExecuteTask() {
         setLoading(true);
 
         const res = await axios.post("http://localhost:8000/execute-task", {
@@ -71,14 +72,41 @@ export const Agents = () => {
         setLoading(false);
     }
 
+    async function handleAdminConfig() {
+        setLoading(true);
+        console.log("Agent Fee", agentFee);
+
+        const res = await axios.post("http://localhost:8000/config", {
+            admin_pubkey: publicKey.toString(),
+            agent_fee_lamports: 7
+        });
+
+        console.log(res);
+        const ix = res.data.ix;
+        console.log("ix", ix);
+
+        try {
+            await signAndSend(ix);
+        } catch (err) {
+            console.error("Transaction failed", err);
+            alert("Transaction failed. Check console.");
+        }
+
+        setLoading(false);
+    }
+
     return (
         <>
             <div>
                 <div>Agents</div>
                 {publicKey ? <p>{publicKey.toString()}</p>:<p>Connect to a wallet to proceed</p>}
-                <button onClick={handleClick} disabled={loading}>
+                <button onClick={handleExecuteTask} disabled={loading}>
                     {loading ? "Processing..." : "Execute Task"}
                 </button>
+                <button onClick={handleAdminConfig} disabled={loading}>
+                    {loading ? "Processing..." : "Global Config"}
+                </button>
+                <input onChange={(value) => {setAgentFee(value*100000000)}}/>
             </div>
         </>
     )
