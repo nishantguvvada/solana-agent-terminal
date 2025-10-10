@@ -13,7 +13,7 @@ import base64
 # ----------------------------
 RPC_URL = "https://api.devnet.solana.com"  # devnet RPC
 PROGRAM_ID = Pubkey.from_string("5xh8w4ihrnrzZo7F6tsdLXRpASTkdGYzfcMEja6vz7wX")  # Replace with your deployed program ID
-IDL_PATH =  ".\\idl.json"                      # Export this from Anchor build folder
+IDL_PATH =  ".\\anchor\\idl.json"                      # Export this from Anchor build folder
 SYS_PROGRAM_ID = Pubkey.from_string("11111111111111111111111111111111")
 
 # ----------------------------

@@ -26,6 +26,7 @@ app.add_middleware(
 
 class AdminRequest(BaseModel):
     admin_pubkey: str
+    unique_key: str
     agent_fee_lamports: int
 
 class DepositRequest(BaseModel):
@@ -53,7 +54,7 @@ async def config(request: AdminRequest):
     """
     Admin creates a `GlobalConfig`. This calls the Anchor `initialize_global_config` function.
     """
-    ix = await build_initialize_global_config_tx(request.admin_pubkey, request.agent_fee_lamports)
+    ix = await build_initialize_global_config_tx(request.admin_pubkey, request.unique_key, request.agent_fee_lamports)
     return {"ix": ix}
 
 @app.post("/deposit")

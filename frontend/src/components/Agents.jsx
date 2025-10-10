@@ -39,11 +39,6 @@ export const Agents = () => {
             const versionedTx = new VersionedTransaction(messageV0);
             const signedTx = await signTransaction(versionedTx);
             console.log("signed tx:", signedTx);
-            const signature = await connection.sendRawTransaction(signedTx.serialize())
-            console.log("signature:", signature);
-            await connection.confirmTransaction({ signature: signature, blockhash, lastValidBlockHeight });
-
-            console.log("Transaction submitted:", signature);
 
         } catch(err) {
             console.log(err)
@@ -78,7 +73,8 @@ export const Agents = () => {
 
         const res = await axios.post("http://localhost:8000/config", {
             admin_pubkey: publicKey.toString(),
-            agent_fee_lamports: 7
+            unique_key: "newyork",
+            agent_fee_lamports: parseInt(agentFee)
         });
 
         console.log(res);
@@ -87,6 +83,7 @@ export const Agents = () => {
 
         try {
             await signAndSend(ix);
+            alert("Transaction Success.");
         } catch (err) {
             console.error("Transaction failed", err);
             alert("Transaction failed. Check console.");
@@ -106,7 +103,7 @@ export const Agents = () => {
                 <button onClick={handleAdminConfig} disabled={loading}>
                     {loading ? "Processing..." : "Global Config"}
                 </button>
-                <input onChange={(value) => {setAgentFee(value*100000000)}}/>
+                <input type="number" onChange={(e) => {setAgentFee(e.target.value)}}/>
             </div>
         </>
     )
