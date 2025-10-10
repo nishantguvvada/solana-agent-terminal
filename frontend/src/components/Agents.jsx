@@ -9,6 +9,7 @@ import axios from "axios";
 export const Agents = () => {
     const [loading, setLoading] = useState(false);
     const [agentFee, setAgentFee] = useState(0);
+    const [uniqueKey, setUniqueKey] = useState("default");
     const { publicKey, signTransaction } = useWallet();
     const { connection } = useConnection();
 
@@ -69,11 +70,10 @@ export const Agents = () => {
 
     async function handleAdminConfig() {
         setLoading(true);
-        console.log("Agent Fee", agentFee);
 
         const res = await axios.post("http://localhost:8000/config", {
             admin_pubkey: publicKey.toString(),
-            unique_key: "newyork",
+            unique_key: uniqueKey,
             agent_fee_lamports: parseInt(agentFee)
         });
 
@@ -103,7 +103,10 @@ export const Agents = () => {
                 <button onClick={handleAdminConfig} disabled={loading}>
                     {loading ? "Processing..." : "Global Config"}
                 </button>
+                <label>Set Agent Fee</label>
                 <input type="number" onChange={(e) => {setAgentFee(e.target.value)}}/>
+                <label>Set Unique Key</label>
+                <input type="text" onChange={(e) => {setUniqueKey(e.target.value)}}/>
             </div>
         </>
     )
