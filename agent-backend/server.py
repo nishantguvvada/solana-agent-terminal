@@ -1,7 +1,7 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from anchor.client import build_deposit_tx, build_execute_task_tx
+from anchor.client import build_deposit_tx, build_execute_task_tx, build_initialize_global_config_tx
 from dotenv import load_dotenv
 import uvicorn
 import os
@@ -24,6 +24,10 @@ app.add_middleware(
 
 # Request Models
 
+class AdminRequest(BaseModel):
+    admin_pubkey: str
+    agent_fee_lamports: int
+
 class DepositRequest(BaseModel):
     user_pubkey: str
     num_tasks: int
@@ -43,6 +47,14 @@ def default():
     return {"response": "on"}
 
 # ON-CHAIN
+
+@app.post("/config")
+async def config(request: AdminRequest):
+    """
+    Admin creates a `GlobalConfig`. This calls the Anchor `initialize_global_config` function.
+    """
+    ix = await build_initialize_global_config_tx(request.admin_pubkey, request.agent_fee_lamports)
+    return {"ix": ix}
 
 @app.post("/deposit")
 async def deposit(request: DepositRequest):
