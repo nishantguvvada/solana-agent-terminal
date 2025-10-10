@@ -77,7 +77,7 @@ export const Agents = () => {
                 <div>Agents</div>
                 {publicKey ? <p>{publicKey.toString()}</p>:<p>Connect to a wallet to proceed</p>}
                 <button onClick={handleClick} disabled={loading}>
-                    {loading ? "Processing..." : "Initialize Global Config"}
+                    {loading ? "Processing..." : "Execute Task"}
                 </button>
             </div>
         </>
