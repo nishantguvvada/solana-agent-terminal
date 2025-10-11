@@ -1,7 +1,12 @@
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from anchor.client import build_deposit_tx, build_execute_task_tx, build_initialize_global_config_tx
+from anchor.client import (
+    build_deposit_tx, 
+    build_execute_task_tx, 
+    build_initialize_global_config_tx, 
+    get_user_account_data
+)
 from dotenv import load_dotenv
 import uvicorn
 import os
@@ -36,6 +41,9 @@ class DepositRequest(BaseModel):
 class ExecuteTaskRequest(BaseModel):
     user_pubkey: str
     target_wallet: str
+
+class UserDetailsRequest(BaseModel):
+    user_pubkey: str
 
 class TradeAnalysisRequest(BaseModel):
     trade_data: dict
@@ -74,9 +82,17 @@ async def execute_task(request: ExecuteTaskRequest, background_tasks: Background
     ix = await build_execute_task_tx(request.user_pubkey)
     return {"ix": ix}
 
-@app.get("/user-details")
-def user_details():
-    return {"response": "tasks remaining"}
+@app.post("/user-details")
+async def user_details(request: UserDetailsRequest):
+    
+    try:
+        user_data = await get_user_account_data(request.user_pubkey)
+        if not user_data:
+            return HTTPException(status_code=404, detail="User account not found")
+    except Exception as e:
+        return HTTPException(status_code=404, detail=f"{e}")
+
+    return {"response": user_data}
 
 # COPY TRADE
 

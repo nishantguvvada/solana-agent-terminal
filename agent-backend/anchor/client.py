@@ -1,11 +1,7 @@
 from solana.rpc.async_api import AsyncClient
 from solders.pubkey import Pubkey
-from solders.hash import Hash
-from solders.message import Message
-from solders.signature import Signature
-from solders.transaction import VersionedTransaction, Transaction
+from models.schemas import UserAccountLayout
 from anchorpy import Program, Provider, Wallet, Idl
-from base64 import b64encode
 import base64
 
 # ----------------------------
@@ -65,11 +61,36 @@ async def get_account_data(pubkey: Pubkey):
     """Fetch PDA account data based on PDA's public key"""
 
     client = AsyncClient(RPC_URL)
-    account_info = await client.get_account_info(pubkey=pubkey)
-    if account_info.value:
-        return account_info.value.data
-    return None
+    info  = await client.get_account_info(pubkey=pubkey)
+    print("INFO", info)
+    account_info = info.value
+    if not account_info or not account_info.data:
+        print("❌ Account has no data or is uninitialized.")
+        return None
+    return account_info.data
 
+def decode_user_account(data: bytes):
+    """Decode raw on-chain data of UserAccount PDA"""
+    obj = UserAccountLayout.parse(data)
+    return {
+        "user": str(Pubkey(obj.user)),
+        "total_paid": obj.total_paid,
+        "tasks_used": obj.tasks_used,
+        "tasks_remaining": obj.tasks_remaining,
+        "has_rated": bool(obj.has_rated),
+    }
+
+async def get_user_account_data(user_pubkey: str):
+    user_account_pda = await get_user_account_pda(user_pubkey=user_pubkey)
+    print("key", user_account_pda)
+    data = await get_account_data(user_account_pda)
+
+    if not data:
+        print("No data found")
+        return None
+
+    decoded = decode_user_account(data)
+    return decoded
 
 # ----------------------------
 # 4. Initialize Global Config
@@ -201,6 +222,7 @@ async def build_withdraw_tx(global_config_pda: str, admin_pubkey: str):
         "data": base64.b64encode(bytes(ix.data)).decode("utf-8"),
     }
 
+
 # ----------------------------
 # 9. Example Usage
 # ----------------------------
@@ -230,7 +252,10 @@ if __name__ == "__main__":
         # tx = await build_execute_task_tx("7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Ctb")
         # print("TX", tx)
 
-        tx = await build_withdraw_tx("AYsRc15PgqNv9ZP3MsfKKny6MGQWSas3gpURWfM4NJ4c","64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        # tx = await build_withdraw_tx("AYsRc15PgqNv9ZP3MsfKKny6MGQWSas3gpURWfM4NJ4c","64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        # print("TX", tx)
+
+        tx = await get_user_account_data("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
         print("TX", tx)
 
 
