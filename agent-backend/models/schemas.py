@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from borsh_construct import CStruct, U64, U8, Bool
+from construct import Struct, Int64ul, Int8ul, Flag, Bytes
 
 class GlobalConfig(BaseModel):
     admin: str
@@ -13,10 +13,11 @@ class UserAccount(BaseModel):
     tasks_remaining: int
     has_rated: bool
 
-UserAccountLayout = CStruct(
-    "user" / U8[32],
-    "total_paid" / U64,
-    "tasks_used" / U8,
-    "tasks_remaining" / U8,
-    "has_rated" / Bool,
+UserAccountLayout = Struct(
+    "discriminator" / Bytes(8),
+    "user" / Bytes(32),
+    "total_paid" / Int64ul,
+    "tasks_used" / Int8ul,
+    "tasks_remaining" / Int8ul,
+    "has_rated" / Flag,
 )

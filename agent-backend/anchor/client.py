@@ -72,6 +72,7 @@ async def get_account_data(pubkey: Pubkey):
 def decode_user_account(data: bytes):
     """Decode raw on-chain data of UserAccount PDA"""
     obj = UserAccountLayout.parse(data)
+    
     return {
         "user": str(Pubkey(obj.user)),
         "total_paid": obj.total_paid,
