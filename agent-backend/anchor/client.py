@@ -1,6 +1,6 @@
 from solana.rpc.async_api import AsyncClient
 from solders.pubkey import Pubkey
-from models.schemas import UserAccountLayout
+from models.schemas import UserAccountLayout, GlobalConfigLayout
 from anchorpy import Program, Provider, Wallet, Idl
 import base64
 
@@ -89,6 +89,27 @@ async def get_user_account_data(user_pubkey: str):
 
     encoded_data = data.value.data
     decoded = decode_user_account(encoded_data)
+    return decoded
+
+def decode_config_account(data: bytes):
+    """Decode raw on-chain data of GlobalConfig PDA"""
+    obj = GlobalConfigLayout.parse(data)
+    
+    return {
+        "admin": str(Pubkey(obj.admin)),
+        "unique_key": obj.unique_key.decode("utf-8"),
+        "agent_fee_lamports": obj.agent_fee_lamports
+    }
+
+async def get_config_account_data(config_pda_pubkey: str):
+    data = await get_account_data(Pubkey.from_string(config_pda_pubkey))
+
+    if not data:
+        print("No data found")
+        return None
+
+    encoded_data = data.value.data
+    decoded = decode_config_account(encoded_data)
     return decoded
 
 # ----------------------------
@@ -254,7 +275,10 @@ if __name__ == "__main__":
         # tx = await build_withdraw_tx("AYsRc15PgqNv9ZP3MsfKKny6MGQWSas3gpURWfM4NJ4c","64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
         # print("TX", tx)
 
-        tx = await get_user_account_data("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        # tx = await get_user_account_data("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")
+        # print("TX", tx)
+
+        tx = await get_config_account_data("HFfs8k2M6VY5yDDEBMyzZhCyJxsMyM6AT5YF1SoJMkP2")
         print("TX", tx)
 
 

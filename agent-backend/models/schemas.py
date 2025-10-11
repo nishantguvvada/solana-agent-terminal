@@ -1,17 +1,12 @@
-from pydantic import BaseModel
-from construct import Struct, Int64ul, Int8ul, Flag, Bytes
+from construct import Struct, Int64ul, Int32ul, Int8ul, Flag, Bytes
 
-class GlobalConfig(BaseModel):
-    admin: str
-    unique_key: str
-    agent_fee_lamports: int
-
-class UserAccount(BaseModel):
-    user: str
-    total_paid: int
-    tasks_used: int
-    tasks_remaining: int
-    has_rated: bool
+GlobalConfigLayout = Struct(
+    "discriminator" / Bytes(8),
+    "admin" / Bytes(32),
+    "unique_key_len" / Int32ul,
+    "unique_key" / Bytes(lambda ctx: ctx.unique_key_len),
+    "agent_fee_lamports" / Int64ul
+)
 
 UserAccountLayout = Struct(
     "discriminator" / Bytes(8),
