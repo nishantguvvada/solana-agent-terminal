@@ -62,12 +62,10 @@ async def get_account_data(pubkey: Pubkey):
 
     client = AsyncClient(RPC_URL)
     info  = await client.get_account_info(pubkey=pubkey)
-    print("INFO", info)
-    account_info = info.value
-    if not account_info or not account_info.data:
+    if not info.value or not info.value.data:
         print("❌ Account has no data or is uninitialized.")
         return None
-    return account_info.data
+    return info
 
 def decode_user_account(data: bytes):
     """Decode raw on-chain data of UserAccount PDA"""
@@ -83,14 +81,14 @@ def decode_user_account(data: bytes):
 
 async def get_user_account_data(user_pubkey: str):
     user_account_pda = await get_user_account_pda(user_pubkey=user_pubkey)
-    print("key", user_account_pda)
     data = await get_account_data(user_account_pda)
 
     if not data:
         print("No data found")
         return None
 
-    decoded = decode_user_account(data)
+    encoded_data = data.value.data
+    decoded = decode_user_account(encoded_data)
     return decoded
 
 # ----------------------------
