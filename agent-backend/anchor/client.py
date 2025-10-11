@@ -84,7 +84,6 @@ async def get_user_account_data(user_pubkey: str):
     data = await get_account_data(user_account_pda)
 
     if not data:
-        print("No data found")
         return None
 
     encoded_data = data.value.data
@@ -105,7 +104,6 @@ async def get_config_account_data(config_pda_pubkey: str):
     data = await get_account_data(Pubkey.from_string(config_pda_pubkey))
 
     if not data:
-        print("No data found")
         return None
 
     encoded_data = data.value.data

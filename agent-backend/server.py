@@ -5,7 +5,8 @@ from anchor.client import (
     build_deposit_tx, 
     build_execute_task_tx, 
     build_initialize_global_config_tx, 
-    get_user_account_data
+    get_user_account_data,
+    get_config_account_data
 )
 from dotenv import load_dotenv
 import uvicorn
@@ -29,10 +30,13 @@ app.add_middleware(
 
 # Request Models
 
-class AdminRequest(BaseModel):
+class AdminInitializeConfigRequest(BaseModel):
     admin_pubkey: str
     unique_key: str
     agent_fee_lamports: int
+
+class AdminGetConfigRequest(BaseModel):
+    config_pda_pubkey: str
 
 class DepositRequest(BaseModel):
     user_pubkey: str
@@ -57,13 +61,29 @@ def default():
 
 # ON-CHAIN
 
-@app.post("/config")
-async def config(request: AdminRequest):
+@app.post("/initialize-config")
+async def initialize_config(request: AdminInitializeConfigRequest):
     """
     Admin creates a `GlobalConfig`. This calls the Anchor `initialize_global_config` function.
     """
     ix = await build_initialize_global_config_tx(request.admin_pubkey, request.unique_key, request.agent_fee_lamports)
     return {"ix": ix}
+
+@app.post("/get-config")
+async def get_config(request: AdminGetConfigRequest):
+    """
+    Admin fetches the `GlobalConfig` for the provided PDA public key.
+    """
+
+    try:
+        config_data = await get_config_account_data(request.config_pda_pubkey)
+        if not config_data:
+            raise HTTPException(status_code=404, detail="Config account not found")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"{e}")
+
+    return {"response": config_data}
+    
 
 @app.post("/deposit")
 async def deposit(request: DepositRequest):
