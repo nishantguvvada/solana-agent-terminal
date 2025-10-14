@@ -39,7 +39,9 @@ class AdminGetConfigRequest(BaseModel):
     config_pda_pubkey: str
 
 class DepositRequest(BaseModel):
+    global_config_pda: str
     user_pubkey: str
+    admin_pubkey: str
     num_tasks: int
 
 class ExecuteTaskRequest(BaseModel):
@@ -90,7 +92,7 @@ async def deposit(request: DepositRequest):
     """
     User pays SOL to buy tasks. This calls the Anchor `user_deposit` function.
     """
-    serialized_tx = await build_deposit_tx(request.user_pubkey, request.num_tasks)
+    serialized_tx = await build_deposit_tx(request.global_config_pda, request.user_pubkey, request.admin_pubkey, request.num_tasks)
     return {"response": {"transaction": serialized_tx}}
 
 @app.post("/execute-task")
@@ -108,9 +110,9 @@ async def user_details(request: UserDetailsRequest):
     try:
         user_data = await get_user_account_data(request.user_pubkey)
         if not user_data:
-            return HTTPException(status_code=404, detail="User account not found")
+            raise HTTPException(status_code=404, detail="User account not found")
     except Exception as e:
-        return HTTPException(status_code=404, detail=f"{e}")
+        raise HTTPException(status_code=404, detail=f"{e}")
 
     return {"response": user_data}
 
