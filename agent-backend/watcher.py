@@ -67,15 +67,15 @@ async def watch_wallet(target_wallet: str, user_pubkey: str):
                     print(f"Ignored message type: {msg}")
 
             except ConnectionClosedError:
-                print("⚠️ Connection lost — reconnecting in 5s...")
+                print("Connection lost — reconnecting in 5s...")
                 await asyncio.sleep(5)
 
             except Exception as e:
-                print(f"❌ Watcher error: {e}")
+                print(f"Watcher error: {e}")
                 await asyncio.sleep(5)
 
 if __name__ == "__main__":
     asyncio.run(watch_wallet(
-        target_wallet="64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf",
-        user_pubkey="64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf"
+        target_wallet="TARGET_KEY",
+        user_pubkey="USER_KEY"
     ))
