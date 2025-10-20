@@ -1,9 +1,11 @@
 import asyncio
 import aiohttp # aiohttp is very efficient for persistent sessions.
 from solana.rpc.async_api import AsyncClient
-from solana.rpc.websocket_api import connect
+from solana.rpc.websocket_api import connect, RpcTransactionLogsFilterMentions
 from solders.pubkey import Pubkey
 from websockets.exceptions import ConnectionClosedError
+import base64
+import json
 
 AI_ANALYZE_ENDPOINT = "http://localhost:8000/agent/analyze-trade"
 TRADE_EXEC_ENDPOINT = "http://localhost:8000/trade-execute"
@@ -25,39 +27,67 @@ async def execute_trade():
         async with session.get(TRADE_EXEC_ENDPOINT) as response:
             return await response.json()
 
-# -- TOKEN DETAILS --
-async def get_token_accounts(wallet_pubkey: str):
-    async with AsyncClient("https://api.devnet.solana.com") as client:
-        resp = await client.get_token_accounts_by_owner(
-            Pubkey.from_string(wallet_pubkey),
-            program_id=Pubkey.from_string("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-        )
-        return [acc.pubkey for acc in resp.value]
+async def process_log_notification(msg, wallet_pubkey):
+    if not hasattr(msg, "result") or not hasattr(msg.result, "value"):
+        return
+
+    value = msg.result.value
+    signature = getattr(value, "signature", None)
+    logs = getattr(value, "logs", [])
+    err = getattr(value, "err", None)
+
+    if err:
+        print(f"Transaction failed: {signature}")
+        return
     
-async def watch_wallet_and_tokens(wallet_pubkey: str):
-    token_accounts = await get_token_accounts(wallet_pubkey)
-    print(f"Found {len(token_accounts)} token accounts")
+    print(f"\nNew Transaction Detected:")
+    print(f"Signature: {signature}")
+    print(f"Logs:")
+    for line in logs:
+        print(f"   {line}")
 
-    async with connect("wss://api.devnet.solana.com/") as websocket:
-        # Subscribe to SOL balance changes
-        await websocket.account_subscribe(Pubkey.from_string(wallet_pubkey))
-        print(f"Subscribed to SOL account: {wallet_pubkey}")
+    if any("Transfer" in line or "TransferChecked" in line for line in logs):
+        print("Detected Token Transfer")
 
-        # Subscribe to all token accounts
-        for token_acc in token_accounts:
-            await websocket.account_subscribe(Pubkey.from_string(token_acc))
-            print(f"Subscribed to token account: {token_acc}")
+        # Send to AI agent for analysis
+        trade_data = {
+            "wallet": wallet_pubkey,
+            "signature": signature,
+            "logs": logs,
+        }
+
+        print(trade_data)
+
+async def watch_wallet_and_tokens(target_wallet: str):
+    """
+    Watches the given wallet using Solana WebSocket RPC.
+    When a new transaction is detected, the watcher sends it to our backend for AI analysis.
+    """
+
+    async with connect("wss://api.devnet.solana.com") as websocket:
+        # Subscribe to all logs mentioning target_wallet
+        # "mentions" filters logs that involve a specific address
+        await websocket.logs_subscribe(RpcTransactionLogsFilterMentions(Pubkey.from_string(target_wallet)))
+        print(f"Watching wallet {target_wallet} for trade activity...")
 
         async for msg in websocket:
-            # Each msg is an update from one of the subscribed accounts
-            if hasattr(msg, "params") and msg.params:
-                account_data = msg.params.result.value.data
-                owner = msg.params.result.value.owner
-                print(f"📡 Update in program {owner}, base64: {account_data}")
 
-# -- TOKEN DETAILS --
+            try:
+                if isinstance(msg, list):
+                    for single_msg in msg:
+                        await process_log_notification(single_msg, target_wallet)
+                else:
+                    await process_log_notification(msg, target_wallet)
 
-async def watch_wallet(target_wallet: str, user_pubkey: str):
+            except ConnectionClosedError:
+                print("Connection lost — reconnecting in 5s...")
+                await asyncio.sleep(5)
+
+            except Exception as e:
+                print(f"Watcher error: {e}")
+                await asyncio.sleep(5)
+
+async def watch_wallet_and_sol_transfer(target_wallet: str, user_pubkey: str):
     """
     Watches the given wallet using Solana WebSocket RPC.
     When a new transaction is detected, the watcher sends it to our backend for AI analysis.
@@ -108,7 +138,9 @@ async def watch_wallet(target_wallet: str, user_pubkey: str):
                 await asyncio.sleep(5)
 
 if __name__ == "__main__":
-    asyncio.run(watch_wallet(
-        target_wallet="TARGET_KEY",
-        user_pubkey="USER_KEY"
-    ))
+    # asyncio.run(watch_wallet(
+    #     target_wallet="TARGET_KEY",
+    #     user_pubkey="USER_KEY"
+    # ))
+
+    print(asyncio.run(watch_wallet_and_tokens("TARGET_PUBLICKEY")))
