@@ -26,6 +26,98 @@ async def execute_trade():
     async with aiohttp.ClientSession() as session:
         async with session.get(TRADE_EXEC_ENDPOINT) as response:
             return await response.json()
+        
+async def get_token_metadata(mint):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://lite-api.jup.ag/tokens/v2/search?query=usdc") as resp:
+            tokens = await resp.json()
+            token_details = tokens[0]
+            return {
+                "id": token_details.get("id", "UNKNOWN"), 
+                "name": token_details.get("name", "UNKNOWN"), 
+                "symbol": token_details.get("symbol", "UNKNOWN"), 
+                "totalSupply": token_details.get("totalSupply", 0), 
+                "liquidity": token_details.get("liquidity", 0)
+            }
+    return {
+        "id": "UNKNOWN", 
+        "name": "UNKNOWN", 
+        "symbol": "UNKNOWN", 
+        "totalSupply": 0, 
+        "liquidity": 0
+    }
+
+async def get_token_price(symbol):
+    async with aiohttp.ClientSession() as session:
+        url = f"https://lite-api.jup.ag/price/v3?ids=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+        async with session.get(url) as resp:
+            data = await resp.json()
+            return data.get("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", {})
+        
+async def enrich_trade_context(tx, target_wallet):
+    """Extract structured trade info from parsed transaction."""
+
+    transaction = tx.get("transaction", {})
+    message = transaction.get("message", {})
+    meta = transaction.get("meta", {})
+
+    instructions = message.get("instructions", [])
+
+    trades = []
+    for ix in instructions:
+        parsed = ix.get("parsed", {})
+        if not parsed:
+            continue
+
+        info = parsed.get("info", {})
+        mint = info.get("mint")
+        program = ix.get("program")
+        tx_type = parsed.get("type")
+
+        amount = (
+            info.get("tokenAmount", {}).get("uiAmount")
+            or info.get("amount")
+            or info.get("uiAmountString")
+        )
+
+        if not mint:
+            continue
+
+        token_meta = await get_token_metadata(mint)
+        price_info = await get_token_price(token_meta.get("id"))
+
+        pre_balances = meta.get("preTokenBalances", [])
+        post_balances = meta.get("postTokenBalances", [])
+
+        direction = "unknown"
+        for pre, post in zip(pre_balances, post_balances):
+            owner = pre.get("owner")
+            if owner == target_wallet:
+                pre_amt = float(pre["uiTokenAmount"].get("uiAmount") or 0)
+                post_amt = float(post["uiTokenAmount"].get("uiAmount") or 0)
+                if post_amt > pre_amt:
+                    direction = "buy"
+                elif post_amt < pre_amt:
+                    direction = "sell"
+                break
+
+        trades.append({
+            "type": tx_type,
+            "program": program,
+            "mint": mint,
+            "token": token_meta.get("symbol"),
+            "name": token_meta.get("name"),
+            "amount": amount,
+            "price_usd": price_info.get("usdPrice"),
+            "direction": direction,
+        })
+
+    return trades
+
+async def fetch_parsed_transaction(signature: str):
+    async with AsyncClient("https://api.devnet.solana.com") as client:
+        resp = await client.get_transaction(signature, encoding="jsonParsed")
+        return resp.value
 
 async def process_log_notification(msg, wallet_pubkey):
     if not hasattr(msg, "result") or not hasattr(msg.result, "value"):
@@ -42,6 +134,16 @@ async def process_log_notification(msg, wallet_pubkey):
     
     print(f"\nNew Transaction Detected:")
     print(f"Signature: {signature}")
+
+    tx = await fetch_parsed_transaction(signature)
+    if not tx:
+        return
+    
+    tx_json = json.loads(tx.to_json()) if hasattr(tx, "to_json") else json.loads(tx.to_json_string())
+
+    trade_context = await enrich_trade_context(tx_json, wallet_pubkey)
+    print("Trade context:", trade_context)
+
     print(f"Logs:")
     for line in logs:
         print(f"   {line}")
@@ -83,9 +185,9 @@ async def watch_wallet_and_tokens(target_wallet: str):
                 print("Connection lost — reconnecting in 5s...")
                 await asyncio.sleep(5)
 
-            except Exception as e:
-                print(f"Watcher error: {e}")
-                await asyncio.sleep(5)
+            # except Exception as e:
+            #     print(f"Watcher error: {e}")
+            #     await asyncio.sleep(5)
 
 async def watch_wallet_and_sol_transfer(target_wallet: str, user_pubkey: str):
     """
@@ -143,4 +245,4 @@ if __name__ == "__main__":
     #     user_pubkey="USER_KEY"
     # ))
 
-    print(asyncio.run(watch_wallet_and_tokens("TARGET_PUBLICKEY")))
+    print(asyncio.run(watch_wallet_and_tokens("64axKE8skJrTkFrQZUUtLi4zGPg8cMasssDBh21L9bFf")))
