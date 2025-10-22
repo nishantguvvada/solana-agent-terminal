@@ -15,14 +15,16 @@ function App() {
   const endpoint = useMemo(() => clusterApiUrl(network), [network]);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={[]} autoConnect>
-        <WalletModalProvider>
-          <Wallet/>
-          <Agents/>
-        </WalletModalProvider>
-      </WalletProvider>
-    </ConnectionProvider>
+    <div className="absolute inset-0 bg-black bg-[radial-gradient(circle_800px_at_center,rgba(213,197,255,0.5),transparent)]">
+      <ConnectionProvider endpoint={endpoint}>
+        <WalletProvider wallets={[]} autoConnect>
+          <WalletModalProvider>
+            <Wallet/>
+            <Agents/>
+          </WalletModalProvider>
+        </WalletProvider>
+      </ConnectionProvider>
+    </div>
   )
 }
 

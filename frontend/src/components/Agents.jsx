@@ -95,7 +95,45 @@ export const Agents = () => {
     return (
         <>
             <div>
-                <div>Agents</div>
+                <div className="bg-red-400">Agents</div>
+                
+                <div class="relative max-w-sm p-6 rounded-2xl bg-gradient-to-b from-[#0e0a1a] to-[#141026] border border-[#2e1f47] shadow-[0_0_30px_rgba(124,58,237,0.2)] text-white hover:shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all duration-300">
+
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                        <h2 class="text-2xl font-semibold">TradeMaster AI</h2>
+                        <span class="inline-block mt-2 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ACTIVE</span>
+                        </div>
+                        <div class="text-right">
+                        <p class="text-sm text-gray-400">Performance</p>
+                        <p class="text-2xl font-bold text-purple-400">94%</p>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-300 leading-relaxed mb-5">
+                        Advanced trading agent specialized in analyzing market patterns and executing optimal trades on Solana DEXs.
+                        Uses machine learning to identify profitable opportunities in real-time.
+                    </p>
+
+                    <div class="mb-5">
+                        <p class="text-sm text-gray-400 mb-2 tracking-wide">CAPABILITIES</p>
+                        <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 text-xs border border-purple-500/40 rounded-full text-purple-300 bg-purple-900/30">DEX Trading</span>
+                        <span class="px-3 py-1 text-xs border border-purple-500/40 rounded-full text-purple-300 bg-purple-900/30">Market Analysis</span>
+                        <span class="px-3 py-1 text-xs border border-purple-500/40 rounded-full text-purple-300 bg-purple-900/30">Risk Management</span>
+                        <span class="px-3 py-1 text-xs border border-purple-500/40 rounded-full text-purple-300 bg-purple-900/30">Liquidity Pooling</span>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-purple-500/20 pt-3 flex justify-between items-center text-sm text-gray-400">
+                        <span>Solana Agent</span>
+                        <div class="flex items-center space-x-2">
+                        <span class="h-2 w-2 bg-emerald-400 rounded-full"></span>
+                        <span>On-chain</span>
+                        </div>
+                    </div>
+                </div>
+
                 {publicKey ? <p>{publicKey.toString()}</p>:<p>Connect to a wallet to proceed</p>}
                 <button onClick={handleExecuteTask} disabled={loading}>
                     {loading ? "Processing..." : "Execute Task"}
