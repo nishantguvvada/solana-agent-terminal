@@ -18,7 +18,8 @@ async def sent_trade_to_agent(trade_data: dict):
         async with session.post(AI_ANALYZE_ENDPOINT, json={
             "trade_data": trade_data
         }) as response:
-            print("RESPONSE:", response.json())
+            output = await response.json()
+            print("RESPONSE:", output)
             return await response.json()
         
 async def execute_trade():
@@ -86,7 +87,9 @@ async def enrich_trade_context(tx, target_wallet):
         price_info = await get_token_price(token_meta.get("id"))
 
         pre_balances = meta.get("preTokenBalances", [])
+        print("PRE: ", pre_balances)
         post_balances = meta.get("postTokenBalances", [])
+        print("POST: ", post_balances)
 
         direction = "unknown"
         for pre, post in zip(pre_balances, post_balances):
@@ -153,14 +156,14 @@ async def process_log_notification(msg, wallet_pubkey, ai_trigger_count):
         # Send to AI agent for analysis
         trade_data = {
             "wallet": wallet_pubkey,
-            "signature": signature,
             "logs": logs,
-            "trade_context": trade_context
+            "trade_context": trade_context[0]
         }
 
         print(trade_data)
 
         ai_response = await sent_trade_to_agent(trade_data)
+        print("AI JUDGEMENT: ", ai_response)
         if ai_response:
             ai_trigger_count += 1
             print(f"AI triggered {ai_trigger_count}/5 times")
@@ -197,9 +200,9 @@ async def watch_wallet_and_tokens(target_wallet: str):
                 print("Connection lost — reconnecting in 5s...")
                 await asyncio.sleep(5)
 
-            except Exception as e:
-                print(f"Watcher error: {e}")
-                await asyncio.sleep(5)
+            # except Exception as e:
+            #     print(f"Watcher error: {e}")
+            #     await asyncio.sleep(5)
 
 async def watch_wallet_and_sol_transfer(target_wallet: str, user_pubkey: str):
     """

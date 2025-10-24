@@ -126,8 +126,8 @@ def analyze_trade(request: TradeAnalysisRequest):
     INTERNAL endpoint: Called by watcher when a trade is detected.
     Runs AI agent workflow (LangGraph / CrewAI) and returns decision.
     """
-    response = compiled_graph.invoke({"messages": [{"role": "user", "content": request.trade_data}]})
-    return {"response": response["messages"][-1].content}
+    response = compiled_graph.invoke({"messages": [{"role": "user", "content": f"Analyze this Solana trade:\n{request.trade_data}"}]})
+    return {"response": response}
 
 # TRADE EXECUTION
 
