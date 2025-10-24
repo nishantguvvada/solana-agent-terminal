@@ -118,9 +118,9 @@ async def fetch_parsed_transaction(signature: str):
         resp = await client.get_transaction(signature, encoding="jsonParsed")
         return resp.value
 
-async def process_log_notification(msg, wallet_pubkey):
+async def process_log_notification(msg, wallet_pubkey, ai_trigger_count):
     if not hasattr(msg, "result") or not hasattr(msg.result, "value"):
-        return
+        return ai_trigger_count
 
     value = msg.result.value
     signature = getattr(value, "signature", None)
@@ -129,14 +129,14 @@ async def process_log_notification(msg, wallet_pubkey):
 
     if err:
         print(f"Transaction failed: {signature}")
-        return
+        return ai_trigger_count
     
     print(f"\nNew Transaction Detected:")
     print(f"Signature: {signature}")
 
     tx = await fetch_parsed_transaction(signature)
     if not tx:
-        return
+        return ai_trigger_count
     
     tx_json = json.loads(tx.to_json()) if hasattr(tx, "to_json") else json.loads(tx.to_json_string())
 
@@ -160,13 +160,19 @@ async def process_log_notification(msg, wallet_pubkey):
 
         print(trade_data)
 
-        print(sent_trade_to_agent(trade_data))
+        ai_response = await sent_trade_to_agent(trade_data)
+        if ai_response:
+            ai_trigger_count += 1
+            print(f"AI triggered {ai_trigger_count}/5 times")
+
+    return ai_trigger_count
 
 async def watch_wallet_and_tokens(target_wallet: str):
     """
     Watches the given wallet using Solana WebSocket RPC.
     When a new transaction is detected, the watcher sends it to our backend for AI analysis.
     """
+    ai_trigger_count = 0
 
     async with connect("wss://api.devnet.solana.com") as websocket:
         # Subscribe to all logs mentioning target_wallet
@@ -177,11 +183,15 @@ async def watch_wallet_and_tokens(target_wallet: str):
         async for msg in websocket:
 
             try:
+                if ai_trigger_count >= 5:
+                    print("✅ Reached AI trigger limit (5). Stopping watcher.")
+                    break
+
                 if isinstance(msg, list):
                     for single_msg in msg:
-                        await process_log_notification(single_msg, target_wallet)
+                        ai_trigger_count = await process_log_notification(single_msg, target_wallet, ai_trigger_count)
                 else:
-                    await process_log_notification(msg, target_wallet)
+                    ai_trigger_count = await process_log_notification(msg, target_wallet, ai_trigger_count)
 
             except ConnectionClosedError:
                 print("Connection lost — reconnecting in 5s...")

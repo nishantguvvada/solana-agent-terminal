@@ -9,6 +9,7 @@ from anchor.client import (
     get_config_account_data
 )
 from agents.langgraph_agent import compiled_graph
+from watcher import watch_wallet_and_tokens
 from dotenv import load_dotenv
 import uvicorn
 import os
@@ -102,6 +103,7 @@ async def execute_task(request: ExecuteTaskRequest, background_tasks: Background
     The watcher listens for trades from `target_wallet` and triggers AI agent analysis.
     """
     ix = await build_execute_task_tx(request.user_pubkey)
+    background_tasks.add_task(watch_wallet_and_tokens, request.target_wallet)
     return {"ix": ix}
 
 @app.post("/user-details")
