@@ -8,6 +8,7 @@ from anchor.client import (
     get_user_account_data,
     get_config_account_data
 )
+from agents.langgraph_agent import compiled_graph
 from dotenv import load_dotenv
 import uvicorn
 import os
@@ -53,7 +54,6 @@ class UserDetailsRequest(BaseModel):
 
 class TradeAnalysisRequest(BaseModel):
     trade_data: dict
-    user_pubkey: str
 
 # Endpoints
 
@@ -124,7 +124,8 @@ def analyze_trade(request: TradeAnalysisRequest):
     INTERNAL endpoint: Called by watcher when a trade is detected.
     Runs AI agent workflow (LangGraph / CrewAI) and returns decision.
     """
-    return {"response": "analyze trade"}
+    response = compiled_graph.invoke({"messages": [{"role": "user", "content": request.trade_data}]})
+    return {"response": response["messages"][-1].content}
 
 # TRADE EXECUTION
 

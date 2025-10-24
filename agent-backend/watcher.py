@@ -10,17 +10,16 @@ import json
 AI_ANALYZE_ENDPOINT = "http://localhost:8000/agent/analyze-trade"
 TRADE_EXEC_ENDPOINT = "http://localhost:8000/trade-execute"
 
-async def sent_trade_to_agent(trade_data: dict, user_pubkey: str):
+async def sent_trade_to_agent(trade_data: dict):
     """
     Calls backend /agent/analyze-trade endpoint for AI analysis.
     """
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.post(AI_ANALYZE_ENDPOINT, json={
-    #         "trade_data": trade_data,
-    #         "user_pubkey": user_pubkey
-    #     }) as response:
-    #         return await response.json()
-    return {"response":"Copy"}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(AI_ANALYZE_ENDPOINT, json={
+            "trade_data": trade_data
+        }) as response:
+            print("RESPONSE:", response.json())
+            return await response.json()
         
 async def execute_trade():
     async with aiohttp.ClientSession() as session:
@@ -156,9 +155,12 @@ async def process_log_notification(msg, wallet_pubkey):
             "wallet": wallet_pubkey,
             "signature": signature,
             "logs": logs,
+            "trade_context": trade_context
         }
 
         print(trade_data)
+
+        print(sent_trade_to_agent(trade_data))
 
 async def watch_wallet_and_tokens(target_wallet: str):
     """
@@ -185,9 +187,9 @@ async def watch_wallet_and_tokens(target_wallet: str):
                 print("Connection lost — reconnecting in 5s...")
                 await asyncio.sleep(5)
 
-            # except Exception as e:
-            #     print(f"Watcher error: {e}")
-            #     await asyncio.sleep(5)
+            except Exception as e:
+                print(f"Watcher error: {e}")
+                await asyncio.sleep(5)
 
 async def watch_wallet_and_sol_transfer(target_wallet: str, user_pubkey: str):
     """
