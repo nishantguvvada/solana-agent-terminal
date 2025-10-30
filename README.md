@@ -1,4 +1,8 @@
-# 🧠 Solana Agent Terminal — TradeMaster AI
+# 🧠 Solana Agent Terminal
+
+Solana Agent Terminal is a decentralized platform that hosts multiple autonomous AI agents capable of performing on-chain tasks — from complex trade analysis to routine automation — for a fee. One such agent, TradeMaster AI, acts as a copy-trading bot that monitors wallet activity, analyzes trades, and mirrors strategies intelligently.
+
+## TradeMaster AI
 
 **TradeMaster AI** is an intelligent **copy trading bot** built on **Solana** that uses **on-chain monitoring** and **AI decision-making** to analyze and replicate trades automatically.
 
