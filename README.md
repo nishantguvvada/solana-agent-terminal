@@ -1,4 +1,3 @@
-```markdown
 # 🧠 Solana Agent Terminal — TradeMaster AI
 
 **TradeMaster AI** is an intelligent **copy trading bot** built on **Solana** that uses **on-chain monitoring** and **AI decision-making** to analyze and replicate trades automatically.
@@ -30,6 +29,7 @@ The system continuously watches a target wallet for token or SOL transfers, enri
 ---
 
 ## 🧠 System Architecture
+
 ```
 
 ┌────────────────────────────┐
@@ -61,17 +61,18 @@ The system continuously watches a target wallet for token or SOL transfers, enri
 │ • Executes trade via API │
 └────────────────────────────┘
 
-````
+```
 
 ---
 
 ## ⚙️ Installation & Setup
 
 ### 1️⃣ Clone the repository
+
 ```bash
 git clone https://github.com/<your-username>/solana-agent-terminal.git
 cd solana-agent-terminal
-````
+```
 
 ### 2️⃣ Create a virtual environment
 
