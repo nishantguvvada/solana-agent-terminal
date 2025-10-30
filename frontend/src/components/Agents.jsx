@@ -10,6 +10,7 @@ export const Agents = () => {
     const [loading, setLoading] = useState(false);
     const [agentFee, setAgentFee] = useState(0);
     const [uniqueKey, setUniqueKey] = useState("default");
+    const [targetKey, setTargetKey] = useState("7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Dtb");
     const { publicKey, signTransaction } = useWallet();
     const { connection } = useConnection();
 
@@ -51,7 +52,7 @@ export const Agents = () => {
 
         const res = await axios.post("http://localhost:8000/execute-task", {
             user_pubkey: publicKey.toString(),
-            target_wallet: "7Y7c2jpw5BSbXzuEfRZwy9rQNSWyYzR2SanAX7ms4Dtb"
+            target_wallet: targetKey
         });
 
         console.log(res);
@@ -94,8 +95,9 @@ export const Agents = () => {
 
     return (
         <>
-            <div>
-                <div className="bg-red-400">Agents</div>
+            <div  className="pt-30 flex flex-col items-center justify-center gap-8">
+
+                {publicKey ? <p>{publicKey.toString()}</p>:<p className="self-center text-white text-2xl font-semibold whitespace-nowrap dark:text-black">Connect to a wallet to proceed</p>}
                 
                 <div class="relative max-w-sm p-6 rounded-2xl bg-gradient-to-b from-[#0e0a1a] to-[#141026] border border-[#2e1f47] shadow-[0_0_30px_rgba(124,58,237,0.2)] text-white hover:shadow-[0_0_40px_rgba(168,85,247,0.3)] transition-all duration-300">
 
@@ -134,17 +136,26 @@ export const Agents = () => {
                     </div>
                 </div>
 
-                {publicKey ? <p>{publicKey.toString()}</p>:<p>Connect to a wallet to proceed</p>}
-                <button onClick={handleExecuteTask} disabled={loading}>
-                    {loading ? "Processing..." : "Execute Task"}
-                </button>
-                <button onClick={handleAdminConfig} disabled={loading}>
-                    {loading ? "Processing..." : "Global Config"}
-                </button>
-                <label>Set Agent Fee</label>
-                <input type="number" onChange={(e) => {setAgentFee(e.target.value)}}/>
-                <label>Set Unique Key</label>
-                <input type="text" onChange={(e) => {setUniqueKey(e.target.value)}}/>
+                <div className="flex flex-row gap-4">
+                    <div className="flex flex-col items-center justify-center gap-2 mt-10 w-full p-6 border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">
+                        <h5 className="text-center my-2 text-2xl font-bold tracking-tight text-gray-900 text-white">Set Global Config</h5>
+                        <label className="mt-2 mb-2 text-base font-normal text-white dark:text-gray-400">Set Agent Fee</label>
+                        <input className="max-w-xl bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="number" onChange={(e) => {setAgentFee(e.target.value)}}/>
+                        <label className="mt-2 mb-2 text-base font-normal text-white dark:text-gray-400">Set Unique Key</label>
+                        <input className="max-w-xl bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="text" onChange={(e) => {setUniqueKey(e.target.value)}}/>
+                        <button className="mt-4 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" onClick={handleAdminConfig} disabled={loading}>
+                            {loading ? "Processing..." : "Global Config"}
+                        </button>
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-2 mt-10 w-full p-6 border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700"> 
+                        <h5 className="text-center my-2 text-2xl font-bold tracking-tight text-gray-900 text-white">Set Wallet to copy</h5>
+                        <label className="mt-2 mb-2 text-base font-normal text-white dark:text-gray-400">Target Public Key</label>
+                        <input className="max-w-xl bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="text" onChange={(e) => {setTargetKey(e.target.value)}}/>
+                        <button className="mt-4 inline-flex items-center px-3 py-2 text-sm font-medium text-center text-white bg-blue-700 rounded-lg hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" onClick={handleExecuteTask} disabled={loading}>
+                            {loading ? "Processing..." : "Execute Task"}
+                        </button>
+                    </div>
+                </div>
             </div>
         </>
     )
